@@ -10,19 +10,37 @@ namespace JudgementCounter
     {
         private static GameObject _uiholder;
         private static Text _judgmentLabels;
-        private static Text _judgmentCounters;
+
+        // Splitting counters into 5 text objects
+        private static Text[] _counterRows = new Text[5];
 
         [HarmonyPatch(typeof(GameController), nameof(GameController.doScoreText))]
         [HarmonyPostfix]
         private static void DoScorePatch(GameController __instance)
         {
-            if (_judgmentCounters == null) return;
+            if (!Plugin.Instance.ModuleConfigEnabled.Value || _counterRows[0] == null) return;
 
-            _judgmentCounters.text = $"{__instance.scores_A}\n" +
-                                     $"{__instance.scores_B}\n" +
-                                     $"{__instance.scores_C}\n" +
-                                     $"{__instance.scores_D}\n" +
-                                     $"{__instance.scores_F}";
+            UpdateCounterText(0, __instance.scores_A); // Perfecto
+            UpdateCounterText(1, __instance.scores_B); // Nice
+            UpdateCounterText(2, __instance.scores_C); // OK
+            UpdateCounterText(3, __instance.scores_D); // Meh
+            UpdateCounterText(4, __instance.scores_F); // Nasty
+        }
+
+
+        private static void UpdateCounterText(int index, int scoreValue)
+        {
+            string scoreString = scoreValue.ToString();
+            _counterRows[index].text = scoreString;
+
+            if (scoreString.Length >= 4)
+            {
+                _counterRows[index].fontSize = 12; 
+            }
+            else
+            {
+                _counterRows[index].fontSize = 13;
+            }
         }
 
         [HarmonyPatch(typeof(GameController), nameof(GameController.Start))]
@@ -33,12 +51,12 @@ namespace JudgementCounter
             if (_uiholder == null) return;
 
             // Display Counter
-            float xAnchorLabel = 0.02f;
-            float xAnchorCounter = 0.04f;
-            var yAnchor = Plugin.Instance.DisplayPosition.Value switch
+            float lineSpacingOffset = 13f;
+
+            var (xAnchorLabel, yAnchorLabel, xAnchorCounter, yAnchorCounter) = Plugin.Instance.DisplayPosition.Value switch
             {
-                DisplayPosition.BottomLeft => 0.01f,// Shift down for Bottom Left
-                _ => 0.89f, //TopLeft or any other unsupported values
+                DisplayPosition.BottomLeft => (0.0175f, 0.01f, 0.03f, 0.116f),   // Shift down for Bottom Left
+                _ => (0.0175f, 0.89f, 0.03f, 0.996f)                             // TopLeft or any other unsupported values
             };
 
             string pColor = ColorUtility.ToHtmlStringRGBA(Plugin.Instance.ColorPerfect.Value);
@@ -47,12 +65,15 @@ namespace JudgementCounter
             string mColor = ColorUtility.ToHtmlStringRGBA(Plugin.Instance.ColorMeh.Value);
             string xColor = ColorUtility.ToHtmlStringRGBA(Plugin.Instance.ColorNasty.Value);
 
-            // Instantiate labels
+            // Label setup
+
             _judgmentLabels = GameObject.Instantiate(__instance.ui_score, _uiholder.transform);
             _judgmentLabels.name = "JudgmentLabels";
             _judgmentLabels.supportRichText = true;
             _judgmentLabels.fontSize = 13;
             _judgmentLabels.alignment = TextAnchor.UpperLeft;
+            _judgmentLabels.horizontalOverflow = HorizontalWrapMode.Overflow;
+
             _judgmentLabels.text =
                 $"<color=#{pColor}>P</color>\n" +
                 $"<color=#{nColor}>N</color>\n" +
@@ -61,25 +82,33 @@ namespace JudgementCounter
                 $"<color=#{xColor}>X</color>";
 
             RectTransform lRect = _judgmentLabels.GetComponent<RectTransform>();
-            lRect.anchorMax = new Vector2(xAnchorLabel, yAnchor);
-            lRect.anchorMin = new Vector2(xAnchorLabel, yAnchor);
+            lRect.anchorMax = new Vector2(xAnchorLabel, yAnchorLabel);
+            lRect.anchorMin = new Vector2(xAnchorLabel, yAnchorLabel);
             lRect.pivot = Vector2.one * .5f;
             lRect.anchoredPosition = Vector2.zero;
             lRect.sizeDelta = new Vector2(50f, 100f);
 
-            // Instantiate counters
-            _judgmentCounters = GameObject.Instantiate(__instance.ui_score, _uiholder.transform);
-            _judgmentCounters.name = "JudgmentCounters";
-            _judgmentCounters.fontSize = 13;
-            _judgmentCounters.alignment = TextAnchor.UpperLeft;
-            _judgmentCounters.text = "0\n0\n0\n0\n0";
+            //Instantiate individual counters vertically
+            for (int i = 0; i < 5; i++)
+            {
+                _counterRows[i] = GameObject.Instantiate(__instance.ui_score, _uiholder.transform);
+                _counterRows[i].name = $"JudgmentCounter_{i}";
+                _counterRows[i].fontSize = 13;
+                _counterRows[i].alignment = TextAnchor.MiddleLeft;
+                _counterRows[i].text = "0";
 
-            RectTransform cRect = _judgmentCounters.GetComponent<RectTransform>();
-            cRect.anchorMax = new Vector2(xAnchorCounter, yAnchor);
-            cRect.anchorMin = new Vector2(xAnchorCounter, yAnchor);
-            cRect.pivot = Vector2.one * .5f;
-            cRect.anchoredPosition = Vector2.zero;
-            cRect.sizeDelta = new Vector2(50f, 100f);
+                _counterRows[i].horizontalOverflow = HorizontalWrapMode.Overflow;
+                _counterRows[i].verticalOverflow = VerticalWrapMode.Overflow;
+                _counterRows[i].resizeTextForBestFit = false;
+
+                RectTransform cRect = _counterRows[i].GetComponent<RectTransform>();
+                cRect.anchorMax = new Vector2(xAnchorCounter, yAnchorCounter);
+                cRect.anchorMin = new Vector2(xAnchorCounter, yAnchorCounter);
+                cRect.pivot = Vector2.one * .5f;
+
+                cRect.anchoredPosition = new Vector2(0f, -(i * lineSpacingOffset));
+                cRect.sizeDelta = new Vector2(40f, 15f);
+            }
         }
 
         [HarmonyPatch(typeof(GameController), nameof(GameController.Update))]
@@ -89,14 +118,18 @@ namespace JudgementCounter
             if (__instance.musictrack_status == GameController.track_status.ended)
             {
                 if (_judgmentLabels != null) GameObject.Destroy(_judgmentLabels.gameObject);
-                if (_judgmentCounters != null) GameObject.Destroy(_judgmentCounters.gameObject);
+
+                for (int i = 0; i < 5; i++)
+                {
+                    if (_counterRows[i] != null) GameObject.Destroy(_counterRows[i].gameObject);
+                    _counterRows[i] = null;
+                }
+
                 _judgmentLabels = null;
-                _judgmentCounters = null;
                 _uiholder = null;
             }
         }
 
-        //You can add more positions by adding them to the enum, just make sure you make the switch statement for the xAnchor as needed
         public enum DisplayPosition
         {
             BottomLeft,
