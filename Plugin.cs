@@ -60,8 +60,6 @@ namespace JudgementCounter
             // Example:
             // Unlimited = config.Bind(CONFIG_FIELD, "Unlimited", DEFAULT_UNLISETTING)
 
-            settingPage = TootTallySettingsManager.AddNewPage("ModulePageName", "HeaderText", 40f, new Color(0, 0, 0, 0));
-
             // Use TootTallySettingPage functions to add your objects to TootTallySetting
             // Example:
             // page.AddToggle(name, option.Unlimited);
@@ -71,9 +69,11 @@ namespace JudgementCounter
             ColorOk = config.Bind("Hex Colors", "OK Color", new Color(1, 1, 0), "Hex for OKs.");
             ColorMeh = config.Bind("Hex Colors", "Meh Color", new Color(1, .5f, 0), "Hex for Mehs.");
             ColorNasty = config.Bind("Hex Colors", "Nasty Color", new Color(1, 0, 0), "Hex for Nastys.");
+
+            settingPage = TootTallySettingsManager.AddNewPage("ModulePageName", "HeaderText", 40f, new Color(0, 0, 0, 0));
+
             if (settingPage != null)
             {
-                settingPage = TootTallySettingsManager.AddNewPage("Judgement Counter", "Judgement Counter", 40f, new Color(0, 0, 0, 0));
                 // Display Position Dropdown
                 settingPage.AddLabel("Display Position");
                 settingPage.AddDropdown("Display Position", DisplayPosition);

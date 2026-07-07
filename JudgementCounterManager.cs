@@ -41,6 +41,12 @@ namespace JudgementCounter
                 _ => 0.89f, //TopLeft or any other unsupported values
             };
 
+            string pColor = ColorUtility.ToHtmlStringRGBA(Plugin.Instance.ColorPerfect.Value);
+            string nColor = ColorUtility.ToHtmlStringRGBA(Plugin.Instance.ColorNice.Value);
+            string oColor = ColorUtility.ToHtmlStringRGBA(Plugin.Instance.ColorOk.Value);
+            string mColor = ColorUtility.ToHtmlStringRGBA(Plugin.Instance.ColorMeh.Value);
+            string xColor = ColorUtility.ToHtmlStringRGBA(Plugin.Instance.ColorNasty.Value);
+
             // Instantiate labels
             _judgmentLabels = GameObject.Instantiate(__instance.ui_score, _uiholder.transform);
             _judgmentLabels.name = "JudgmentLabels";
@@ -48,11 +54,11 @@ namespace JudgementCounter
             _judgmentLabels.fontSize = 13;
             _judgmentLabels.alignment = TextAnchor.UpperLeft;
             _judgmentLabels.text =
-                $"<color=#{Plugin.Instance.ColorPerfect.Value}>P</color>\n" +
-                $"<color=#{Plugin.Instance.ColorNice.Value}>N</color>\n" +
-                $"<color=#{Plugin.Instance.ColorOk.Value}>O</color>\n" +
-                $"<color=#{Plugin.Instance.ColorMeh.Value}>M</color>\n" +
-                $"<color=#{Plugin.Instance.ColorNasty.Value}>X</color>";
+                $"<color=#{pColor}>P</color>\n" +
+                $"<color=#{nColor}>N</color>\n" +
+                $"<color=#{oColor}>O</color>\n" +
+                $"<color=#{mColor}>M</color>\n" +
+                $"<color=#{xColor}>X</color>";
 
             RectTransform lRect = _judgmentLabels.GetComponent<RectTransform>();
             lRect.anchorMax = new Vector2(xAnchorLabel, yAnchor);
