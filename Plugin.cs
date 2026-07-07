@@ -20,15 +20,14 @@ namespace JudgementCounter
         private Harmony _harmony;
         public ConfigEntry<bool> ModuleConfigEnabled { get; set; }
         public bool IsConfigInitialized { get; set; }
-
+        //Change this name to whatever you want
         //Config
-        public ConfigEntry<string> DisplayPosition { get; set; }
-        public ConfigEntry<string> ColorPerfect { get; set; }
-        public ConfigEntry<string> ColorNice { get; set; }
-        public ConfigEntry<string> ColorOk { get; set; }
-        public ConfigEntry<string> ColorMeh { get; set; }
-        public ConfigEntry<string> ColorNasty { get; set; }
-
+        public ConfigEntry<JudgementCounterManager.DisplayPosition> DisplayPosition { get; set; }
+        public ConfigEntry<Color> ColorPerfect { get; set; }
+        public ConfigEntry<Color> ColorNice { get; set; }
+        public ConfigEntry<Color> ColorOk { get; set; }
+        public ConfigEntry<Color> ColorMeh { get; set; }
+        public ConfigEntry<Color> ColorNasty { get; set; }
         public string Name { get => PluginInfo.PLUGIN_NAME; set => Name = value; }
 
         public static TootTallySettingPage settingPage;
@@ -47,7 +46,8 @@ namespace JudgementCounter
 
         private void TryInitialize()
         {
-            ModuleConfigEnabled = TootTallyCore.Plugin.Instance.Config.Bind("Modules", "Judgement Counter", true, "Displays a live hit note window overlay during gameplay.");
+            // Bind to the TTModules Config for TootTally
+            ModuleConfigEnabled = TootTallyCore.Plugin.Instance.Config.Bind("Modules", "<insert module name here>", true, "<insert module description here>");
             TootTallyModuleManager.AddModule(this);
             TootTallySettings.Plugin.Instance.AddModuleToSettingPage(this);
         }
@@ -56,36 +56,39 @@ namespace JudgementCounter
         {
             string configPath = Path.Combine(Paths.BepInExRootPath, "config/");
             ConfigFile config = new ConfigFile(configPath + CONFIG_NAME, true) { SaveOnConfigSet = true };
+            // Set your config here by binding them to the related ConfigEntry
+            // Example:
+            // Unlimited = config.Bind(CONFIG_FIELD, "Unlimited", DEFAULT_UNLISETTING)
 
-            DisplayPosition = config.Bind("Settings", "DisplayPosition", "Top Left", "Judgement Display Position.");
-            ColorPerfect = config.Bind("Hex Colors", "Perfecto Color", "00BFFF", "Hex for Perfectos.");
-            ColorNice = config.Bind("Hex Colors", "Nice Color", "00FF00", "Hex for Nices.");
-            ColorOk = config.Bind("Hex Colors", "OK Color", "FFFF00", "Hex for OKs.");
-            ColorMeh = config.Bind("Hex Colors", "Meh Color", "FF8800", "Hex for Mehs.");
-            ColorNasty = config.Bind("Hex Colors", "Nasty Color", "FF0000", "Hex for Nastys.");
+            settingPage = TootTallySettingsManager.AddNewPage("ModulePageName", "HeaderText", 40f, new Color(0, 0, 0, 0));
 
-            settingPage = TootTallySettingsManager.AddNewPage("Judgement Counter", "Judgement Counter", 40f, new Color(0, 0, 0, 0));
+            // Use TootTallySettingPage functions to add your objects to TootTallySetting
+            // Example:
+            // page.AddToggle(name, option.Unlimited);
+            DisplayPosition = config.Bind("Settings", "DisplayPosition", JudgementCounterManager.DisplayPosition.TopLeft, "Judgement Display Position.");
+            ColorPerfect = config.Bind("Hex Colors", "Perfecto Color", new Color(0, 1, 1), "Hex for Perfectos.");
+            ColorNice = config.Bind("Hex Colors", "Nice Color", new Color(0, 1, 0), "Hex for Nices.");
+            ColorOk = config.Bind("Hex Colors", "OK Color", new Color(1, 1, 0), "Hex for OKs.");
+            ColorMeh = config.Bind("Hex Colors", "Meh Color", new Color(1, .5f, 0), "Hex for Mehs.");
+            ColorNasty = config.Bind("Hex Colors", "Nasty Color", new Color(1, 0, 0), "Hex for Nastys.");
             if (settingPage != null)
             {
+                settingPage = TootTallySettingsManager.AddNewPage("Judgement Counter", "Judgement Counter", 40f, new Color(0, 0, 0, 0));
                 // Display Position Dropdown
                 settingPage.AddLabel("Display Position");
-                settingPage.AddDropdown("Display Position", DisplayPosition, new string[] { "Top Left", "Bottom Left" });
+                settingPage.AddDropdown("Display Position", DisplayPosition);
 
                 // Judgement Hex Codes Headers and Fields
                 settingPage.AddLabel("Perfecto Color Hex");
-                settingPage.AddTextField("Perfecto Color Hex", ColorPerfect.Value, false, (val) => ColorPerfect.Value = val);
-
+                settingPage.AddColorSliders("Perfecto Color", "Perfecto Color", ColorPerfect);
                 settingPage.AddLabel("Nice Color Hex");
-                settingPage.AddTextField("Nice Color Hex", ColorNice.Value, false, (val) => ColorNice.Value = val);
-
+                settingPage.AddColorSliders("Nice Color Hex", "Nice Color", ColorNice);
                 settingPage.AddLabel("OK Color Hex");
-                settingPage.AddTextField("OK Color Hex", ColorOk.Value, false, (val) => ColorOk.Value = val);
-
+                settingPage.AddColorSliders("OK Color Hex", "OK Color", ColorOk);
                 settingPage.AddLabel("Meh Color Hex");
-                settingPage.AddTextField("Meh Color Hex", ColorMeh.Value, false, (val) => ColorMeh.Value = val);
-
+                settingPage.AddColorSliders("Meh Color Hex", "Meh Color", ColorMeh);
                 settingPage.AddLabel("Nasty Color Hex");
-                settingPage.AddTextField("Nasty Color Hex", ColorNasty.Value, false, (val) => ColorNasty.Value = val);
+                settingPage.AddColorSliders("Nasty Color Hex", "Nasty Color", ColorNasty);
             }
 
             _harmony.PatchAll(typeof(JudgementCounterManager));

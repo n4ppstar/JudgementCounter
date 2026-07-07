@@ -1,4 +1,6 @@
 using HarmonyLib;
+using TootTallyCore.Graphics;
+using TootTallySettings;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -30,22 +32,14 @@ namespace JudgementCounter
             _uiholder = GameObject.Find("GameplayCanvas/UIHolder");
             if (_uiholder == null) return;
 
-            //Fetch Hex from Config
-            string pColor = GetValidHex(Plugin.Instance.ColorPerfect.Value, "00BFFF");
-            string nColor = GetValidHex(Plugin.Instance.ColorNice.Value, "00FF00");
-            string oColor = GetValidHex(Plugin.Instance.ColorOk.Value, "FFFF00");
-            string mColor = GetValidHex(Plugin.Instance.ColorMeh.Value, "FF8800");
-            string xColor = GetValidHex(Plugin.Instance.ColorNasty.Value, "FF0000");
-
             // Display Counter
             float xAnchorLabel = 0.02f;
             float xAnchorCounter = 0.04f;
-            float yAnchor = 0.89f; // Default to Top Left
-
-            if (Plugin.Instance.DisplayPosition.Value == "Bottom Left")
+            var yAnchor = Plugin.Instance.DisplayPosition.Value switch
             {
-                yAnchor = 0.01f; // Shift down for Bottom Left
-            }
+                DisplayPosition.BottomLeft => 0.01f,// Shift down for Bottom Left
+                _ => 0.89f, //TopLeft or any other unsupported values
+            };
 
             // Instantiate labels
             _judgmentLabels = GameObject.Instantiate(__instance.ui_score, _uiholder.transform);
@@ -53,12 +47,17 @@ namespace JudgementCounter
             _judgmentLabels.supportRichText = true;
             _judgmentLabels.fontSize = 13;
             _judgmentLabels.alignment = TextAnchor.UpperLeft;
-            _judgmentLabels.text = $"<color=#{pColor}>P</color>\n<color=#{nColor}>N</color>\n<color=#{oColor}>O</color>\n<color=#{mColor}>M</color>\n<color=#{xColor}>X</color>";
+            _judgmentLabels.text =
+                $"<color=#{Plugin.Instance.ColorPerfect.Value}>P</color>\n" +
+                $"<color=#{Plugin.Instance.ColorNice.Value}>N</color>\n" +
+                $"<color=#{Plugin.Instance.ColorOk.Value}>O</color>\n" +
+                $"<color=#{Plugin.Instance.ColorMeh.Value}>M</color>\n" +
+                $"<color=#{Plugin.Instance.ColorNasty.Value}>X</color>";
 
             RectTransform lRect = _judgmentLabels.GetComponent<RectTransform>();
             lRect.anchorMax = new Vector2(xAnchorLabel, yAnchor);
             lRect.anchorMin = new Vector2(xAnchorLabel, yAnchor);
-            lRect.pivot = new Vector2(0.5f, 0.5f);
+            lRect.pivot = Vector2.one * .5f;
             lRect.anchoredPosition = Vector2.zero;
             lRect.sizeDelta = new Vector2(50f, 100f);
 
@@ -72,7 +71,7 @@ namespace JudgementCounter
             RectTransform cRect = _judgmentCounters.GetComponent<RectTransform>();
             cRect.anchorMax = new Vector2(xAnchorCounter, yAnchor);
             cRect.anchorMin = new Vector2(xAnchorCounter, yAnchor);
-            cRect.pivot = new Vector2(0.5f, 0.5f);
+            cRect.pivot = Vector2.one * .5f;
             cRect.anchoredPosition = Vector2.zero;
             cRect.sizeDelta = new Vector2(50f, 100f);
         }
@@ -91,16 +90,11 @@ namespace JudgementCounter
             }
         }
 
-        private static string GetValidHex(string input, string fallback)
+        //You can add more positions by adding them to the enum, just make sure you make the switch statement for the xAnchor as needed
+        public enum DisplayPosition
         {
-            if (string.IsNullOrEmpty(input)) return fallback;
-
-            string cleanInput = input.Trim().Replace("#", "");
-            if (ColorUtility.TryParseHtmlString("#" + cleanInput, out _))
-            {
-                return cleanInput;
-            }
-            return fallback;
+            BottomLeft,
+            TopLeft,
         }
     }
 }
